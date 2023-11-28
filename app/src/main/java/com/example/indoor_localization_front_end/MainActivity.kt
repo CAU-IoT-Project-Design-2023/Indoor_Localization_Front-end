@@ -18,7 +18,9 @@ class MainActivity : AppCompatActivity() {
         getSystemService(Context.SENSOR_SERVICE) as SensorManager
     }
 
-    private val retrofitService = RetrofitClient.getApiService()
+    private var isWorking: Boolean = false
+
+    //private val retrofitService = RetrofitClient.getApiService()
 
     // 센서 이벤트를 처리하는 리스너
     private val eventListener: SensorEventListener = object : SensorEventListener {
@@ -40,12 +42,19 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 센서의 변화 값을 처리할 리스너를 등록.
-        sensorManager.registerListener(
-            eventListener,
-            sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION),
-            SensorManager.SENSOR_DELAY_NORMAL
-        )
+        binding.button.setOnClickListener {
+            // 센서의 변화 값을 처리할 리스너를 등록.
+            if (!isWorking) {
+                sensorManager.registerListener(
+                    eventListener,
+                    sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
+                    SensorManager.SENSOR_DELAY_NORMAL
+                )
+            } else {
+                sensorManager.unregisterListener(eventListener)
+            }
+            isWorking = !isWorking
+        }
     }
 
     override fun onStop() {
