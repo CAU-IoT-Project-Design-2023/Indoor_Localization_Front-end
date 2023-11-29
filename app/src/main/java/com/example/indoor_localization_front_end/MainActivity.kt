@@ -26,11 +26,34 @@ class MainActivity : AppCompatActivity() {
     private val eventListener: SensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent?) {
             event?.let {
-                if (event.sensor.type != Sensor.TYPE_GRAVITY) return@let
+                val x = event.values[0].toDouble()
+                val y = event.values[1].toDouble()
+                val z = event.values[2].toDouble()
 
-                binding.textView1.text = event.values[0].toDouble().toString()
-                binding.textView2.text = event.values[1].toDouble().toString()
-                binding.textView3.text = event.values[2].toDouble().toString()
+                when (event.sensor.type) {
+                    Sensor.TYPE_LINEAR_ACCELERATION -> {
+                        binding.textView1.text = buildString {
+                            append("x: ${x}\n")
+                            append("y: ${y}\n")
+                            append("z: ${z}")
+                        }
+                    }
+                    Sensor.TYPE_GYROSCOPE -> {
+                        binding.textView2.text = buildString {
+                            append("x: ${x}\n")
+                            append("y: ${y}\n")
+                            append("z: ${z}")
+                        }
+                    }
+                    Sensor.TYPE_MAGNETIC_FIELD -> {
+                        binding.textView3.text = buildString {
+                            append("x: ${x}\n")
+                            append("y: ${y}\n")
+                            append("z: ${z}")
+                        }
+                    }
+                    else -> {}
+                }
             }
         }
 
@@ -45,11 +68,19 @@ class MainActivity : AppCompatActivity() {
         binding.button.setOnClickListener {
             // 센서의 변화 값을 처리할 리스너를 등록.
             if (!isWorking) {
-                sensorManager.registerListener(
-                    eventListener,
-                    sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
-                    SensorManager.SENSOR_DELAY_NORMAL
+                val sensors = arrayOf(
+                    Sensor.TYPE_LINEAR_ACCELERATION,
+                    Sensor.TYPE_GYROSCOPE,
+                    Sensor.TYPE_MAGNETIC_FIELD
                 )
+
+                for (sensor in sensors) {
+                    sensorManager.registerListener(
+                        eventListener,
+                        sensorManager.getDefaultSensor(sensor),
+                        SensorManager.SENSOR_DELAY_NORMAL
+                    )
+                }
             } else {
                 sensorManager.unregisterListener(eventListener)
             }
@@ -61,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         try {
             sensorManager.unregisterListener(eventListener)
+            isWorking = false
         } catch (e: Exception) {
             e.printStackTrace()
         }
