@@ -8,6 +8,9 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface RetrofitInterface {
+    @GET("is-connected")
+    fun isConnected(): Call<String>
+
     @GET("get-sensor-data")
     fun sendSensorData(
         @Query("x") x: Double,
