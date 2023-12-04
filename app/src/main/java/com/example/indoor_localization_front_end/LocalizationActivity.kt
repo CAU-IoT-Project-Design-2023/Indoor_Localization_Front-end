@@ -27,9 +27,6 @@ class LocalizationActivity : AppCompatActivity() {
 
     private var isWorking: Boolean = false
 
-    private var num1 = 0L
-    private var num2 = 0L
-
     // 센서 이벤트를 처리하는 리스너
     private val eventListener: SensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent?) {
@@ -41,31 +38,29 @@ class LocalizationActivity : AppCompatActivity() {
                 when (event.sensor.type) {
                     Sensor.TYPE_LINEAR_ACCELERATION -> {
                         binding.textView1.text = buildString {
-                            num1++
-
                             append("${event.timestamp}\n")
-                            append("${num1}\n")
                             append("x: ${x}\n")
                             append("y: ${y}\n")
-                            append("z: ${z}")
+                            append("z: ${z}\n")
+                        }
+                        accelDataList[0].add(x)
+                        accelDataList[1].add(y)
+                        accelDataList[2].add(z)
 
-                            accelDataList[0].add(x)
-                            accelDataList[1].add(y)
-                            accelDataList[2].add(z)
+                        binding.textView2.text = buildString {
+                            append("x: ${gyroData[0]}\n")
+                            append("y: ${gyroData[1]}\n")
+                            append("z: ${gyroData[2]}\n")
+                        }
+                        for (i in gyroData.indices) {
+                            gyroDataList[i].add(gyroData[i])
+                            gyroData[i] = 0.0
                         }
                     }
                     Sensor.TYPE_GYROSCOPE -> {
-                        binding.textView2.text = buildString {
-                            num2++
-                            append("${num2}\n")
-                            append("x: ${x}\n")
-                            append("y: ${y}\n")
-                            append("z: ${z}")
-
-                            gyroDataList[0].add(x)
-                            gyroDataList[1].add(y)
-                            gyroDataList[2].add(z)
-                        }
+                        gyroData[0] += x
+                        gyroData[1] += y
+                        gyroData[2] += z
                     }
                     else -> {}
                 }
@@ -77,6 +72,7 @@ class LocalizationActivity : AppCompatActivity() {
 
     private val accelDataList = Array<MutableList<Double>>(3) { mutableListOf() }
     private val gyroDataList = Array<MutableList<Double>>(3) { mutableListOf() }
+    private val gyroData = doubleArrayOf(0.0, 0.0, 0.0)
 
     // permissions
     private var permissionAccepted = false
@@ -102,9 +98,8 @@ class LocalizationActivity : AppCompatActivity() {
                 for (i in accelDataList.indices) {
                     accelDataList[i].clear()
                     gyroDataList[i].clear()
+                    gyroData[i] = 0.0
                 }
-                num1 = 0L
-                num2 = 0L
 
                 val sensors = arrayOf(
                     Sensor.TYPE_LINEAR_ACCELERATION,
