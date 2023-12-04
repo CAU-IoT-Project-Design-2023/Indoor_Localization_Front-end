@@ -47,6 +47,11 @@ class LocalizationActivity : AppCompatActivity() {
                 val z = event.values[2].toDouble()
 
                 when (event.sensor.type) {
+                    Sensor.TYPE_GYROSCOPE -> {
+                        gyroData[0] += x
+                        gyroData[1] += y
+                        gyroData[2] += z
+                    }
                     Sensor.TYPE_LINEAR_ACCELERATION -> {
                         binding.textView1.text = buildString {
                             append("${event.timestamp}\n")
@@ -67,11 +72,6 @@ class LocalizationActivity : AppCompatActivity() {
                             gyroDataList[i].add(gyroData[i])
                             gyroData[i] = 0.0
                         }
-                    }
-                    Sensor.TYPE_GYROSCOPE -> {
-                        gyroData[0] += x
-                        gyroData[1] += y
-                        gyroData[2] += z
                     }
                     else -> {}
                 }
@@ -121,8 +121,8 @@ class LocalizationActivity : AppCompatActivity() {
                 }
 
                 val sensors = arrayOf(
-                    Sensor.TYPE_LINEAR_ACCELERATION,
-                    Sensor.TYPE_GYROSCOPE
+                    Sensor.TYPE_GYROSCOPE,
+                    Sensor.TYPE_LINEAR_ACCELERATION
                 )
 
                 for (sensor in sensors) {
