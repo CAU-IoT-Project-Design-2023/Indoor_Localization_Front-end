@@ -199,18 +199,19 @@ class LocalizationActivity : AppCompatActivity() {
             File(dir).mkdirs()
         }
         val excelFile = File(dir, "sensor_data.xls")
-        try {
+
+        return try {
             workbook.write(FileOutputStream(excelFile))
             workbook.close()
-            return true
+            true
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(applicationContext, "Failed to save the data.", Toast.LENGTH_SHORT).show()
-            return false
+            false
         }
     }
 
-    suspend fun doIndoorLocalization() {
+    private suspend fun doIndoorLocalization() {
         val file = File(
             Environment.getExternalStorageDirectory().absolutePath +
                     "/Indoor Positioning System/sensor_data.xls"

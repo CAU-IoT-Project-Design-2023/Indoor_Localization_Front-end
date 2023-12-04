@@ -31,27 +31,32 @@ class MainActivity : AppCompatActivity() {
             builder.setView(dialogView)
                 .setPositiveButton("OK") { _, _ ->
                     val url = dialogView.findViewById<EditText>(R.id.addressEditText).text.toString()
-                    val retrofitService = RetrofitClient.getApiService2(url)
 
-                    retrofitService.isConnected().enqueue(object : Callback<String> {
-                        override fun onResponse(call: Call<String>, response: Response<String>) {
-                            if (response.isSuccessful) {
-                                val result = response.body()
-                                if (result == "connected") {
-                                    val intent = Intent(this@MainActivity, LocalizationActivity::class.java)
-                                    intent.putExtra("url", url)
-                                    startActivity(intent)
+                    try {
+                        val retrofitService = RetrofitClient.getApiService2(url)
+                        retrofitService.isConnected().enqueue(object : Callback<String> {
+                            override fun onResponse(call: Call<String>, response: Response<String>) {
+                                if (response.isSuccessful) {
+                                    val result = response.body()
+                                    if (result == "connected") {
+                                        val intent = Intent(this@MainActivity, LocalizationActivity::class.java)
+                                        intent.putExtra("url", url)
+                                        startActivity(intent)
+                                    }
+                                } else {
+                                    Toast.makeText(applicationContext, "Response Error", Toast.LENGTH_SHORT).show()
                                 }
-                            } else {
-                                Toast.makeText(applicationContext, "Connection error", Toast.LENGTH_SHORT).show()
                             }
-                        }
 
-                        override fun onFailure(call: Call<String>, t: Throwable) {
-                            t.printStackTrace()
-                            Toast.makeText(applicationContext, "Failed connection", Toast.LENGTH_SHORT).show()
-                        }
-                    })
+                            override fun onFailure(call: Call<String>, t: Throwable) {
+                                t.printStackTrace()
+                                Toast.makeText(applicationContext, "Connection Error", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    } catch (e: Exception) {
+                        Toast.makeText(applicationContext, "Wrong IP Address", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
                 }
                 .setNegativeButton("Cancel") { _, _ -> }
 
