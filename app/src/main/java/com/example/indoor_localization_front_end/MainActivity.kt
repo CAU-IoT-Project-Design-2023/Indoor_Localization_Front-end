@@ -1,19 +1,13 @@
 package com.example.indoor_localization_front_end
 
-import android.app.Dialog
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.DialogFragment
 import com.example.indoor_localization_front_end.databinding.ActivityMainBinding
 import com.example.indoor_localization_front_end.retrofit_utils.RetrofitClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -61,6 +55,11 @@ class MainActivity : AppCompatActivity() {
                 .setNegativeButton("Cancel") { _, _ -> }
 
             builder.create().show()
+        }
+
+        // TODO
+        binding.button2.setOnClickListener {
+            startActivity(Intent(this, LocalizationActivity::class.java))
         }
     }
 }
