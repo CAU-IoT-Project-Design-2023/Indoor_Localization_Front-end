@@ -38,7 +38,9 @@ class MainActivity : AppCompatActivity() {
                             if (response.isSuccessful) {
                                 val result = response.body()
                                 if (result == "connected") {
-                                    startActivity(Intent(this@MainActivity, LocalizationActivity::class.java))
+                                    val intent = Intent(this@MainActivity, LocalizationActivity::class.java)
+                                    intent.putExtra("url", url)
+                                    startActivity(intent)
                                 }
                             } else {
                                 Toast.makeText(applicationContext, "Connection error", Toast.LENGTH_SHORT).show()

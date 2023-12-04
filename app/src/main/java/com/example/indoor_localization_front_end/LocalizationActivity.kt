@@ -10,15 +10,26 @@ import android.hardware.SensorManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import com.example.indoor_localization_front_end.databinding.ActivityLocalizationBinding
+import com.example.indoor_localization_front_end.retrofit_utils.RetrofitClient
+import com.example.indoor_localization_front_end.retrofit_utils.RetrofitInterface
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import java.io.File
 import java.io.FileOutputStream
 
 class LocalizationActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLocalizationBinding
-    //private val retrofitService = RetrofitClient.getApiService()
+    private lateinit var retrofitService: RetrofitInterface
 
     // Sensor 관리자 객체로 lazy 를 사용하여 실제로 사용할 때 초기화 됨.
     private val sensorManager: SensorManager by lazy {
@@ -89,6 +100,14 @@ class LocalizationActivity : AppCompatActivity() {
         binding = ActivityLocalizationBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val url = intent.getStringExtra("url")
+        retrofitService = if (url == null) {
+            RetrofitClient.getApiService()
+        } else {
+            Toast.makeText(applicationContext, "url", Toast.LENGTH_SHORT).show()
+            RetrofitClient.getApiService2(url)
+        }
+
         // request permissions
         requestPermissions(permissions, REQUEST_PERMISSIONS)
 
@@ -115,7 +134,11 @@ class LocalizationActivity : AppCompatActivity() {
                 }
             } else {
                 sensorManager.unregisterListener(eventListener)
-                saveExcel()
+                if (saveExcel()) {
+                    runBlocking {
+                        doIndoorLocalization()
+                    }
+                }
             }
             isWorking = !isWorking
         }
@@ -131,9 +154,9 @@ class LocalizationActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveExcel() {
+    private fun saveExcel(): Boolean {
         if (!isExternalStorageWritable()) {
-            return
+            return false
         }
 
         val workbook = HSSFWorkbook()
@@ -179,10 +202,51 @@ class LocalizationActivity : AppCompatActivity() {
         try {
             workbook.write(FileOutputStream(excelFile))
             workbook.close()
-            Toast.makeText(applicationContext, "The data is saved successfully.", Toast.LENGTH_SHORT).show()
+            return true
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(applicationContext, "Failed to save the data.", Toast.LENGTH_SHORT).show()
+            return false
+        }
+    }
+
+    suspend fun doIndoorLocalization() {
+        val file = File(
+            Environment.getExternalStorageDirectory().absolutePath +
+                    "/Indoor Positioning System/sensor_data.xls"
+        )
+        
+        // 1st parameter: MediaType 으로 보내는 파일의 타입을 정하는 것
+        // 2nd parameter: File 에 해당
+        val requestFile = RequestBody.create(
+            MediaType.parse("multipart/form-data"),
+            file
+        )
+        
+        // 1st parameter: 서버에서 받는 KEY 값
+        // 2nd parameter: 파일 이름
+        // 3rd parameter: RequestBody 에 해당
+        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+        withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
+            try {
+                val response = retrofitService.doIndoorLocalization(body)
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(applicationContext, result?.result, Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(applicationContext, "Response Error", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(applicationContext, "Connection Error", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

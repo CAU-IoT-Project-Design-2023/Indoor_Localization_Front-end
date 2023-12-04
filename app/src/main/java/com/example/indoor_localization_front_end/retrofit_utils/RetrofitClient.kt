@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // IP 주소
-    private const val BASE_URL = "http://???.???.??.???:????"
+    private const val BASE_URL = "http://192.168.1.80:5000"
 
     private fun getInstance(): Retrofit {
         val gson = GsonBuilder().setLenient().create()
