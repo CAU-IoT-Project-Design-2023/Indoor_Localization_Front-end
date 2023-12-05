@@ -1,6 +1,8 @@
 package com.example.indoor_localization_front_end
 
+import android.app.Activity
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.EditText
@@ -14,29 +16,35 @@ import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var pref: SharedPreferences
+    private lateinit var editor: SharedPreferences.Editor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        pref = getSharedPreferences("ip_address", Activity.MODE_PRIVATE)
+        editor = pref.edit()
+
         binding.button.setOnClickListener {
             // Use the Builder class for convenient dialog construction
             val builder = AlertDialog.Builder(this)
 
             val dialogView = layoutInflater.inflate(R.layout.dialog_ip, null)
+            dialogView.findViewById<EditText>(R.id.addressEditText).setText(pref.getString("url", ""))
 
             // Inflate and set the layout for the dialog
             // Pass null as the parent view because its going in the dialog layout
             builder.setView(dialogView)
                 .setPositiveButton("OK") { _, _ ->
                     val url = dialogView.findViewById<EditText>(R.id.addressEditText).text.toString()
-
                     try {
                         val retrofitService = RetrofitClient.getApiService2(url)
                         retrofitService.isConnected().enqueue(object : Callback<String> {
                             override fun onResponse(call: Call<String>, response: Response<String>) {
                                 if (response.isSuccessful) {
+                                    editor.putString("url", url).apply()
                                     val result = response.body()
                                     if (result == "connected") {
                                         val intent = Intent(this@MainActivity, LocalizationActivity::class.java)
