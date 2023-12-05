@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             builder.create().show()
         }
 
-        // TODO
+        // TODO: 삭제 필요?
         binding.button2.setOnClickListener {
             startActivity(Intent(this, LocalizationActivity::class.java))
         }

@@ -54,7 +54,6 @@ class LocalizationActivity : AppCompatActivity() {
                     }
                     Sensor.TYPE_LINEAR_ACCELERATION -> {
                         binding.textView1.text = buildString {
-                            append("${event.timestamp}\n")
                             append("x: ${x}\n")
                             append("y: ${y}\n")
                             append("z: ${z}\n")
@@ -234,8 +233,17 @@ class LocalizationActivity : AppCompatActivity() {
                 val response = retrofitService.doIndoorLocalization(body)
                 if (response.isSuccessful) {
                     val result = response.body()
+                    val resultStr = """
+                        result: ${result?.result},
+                        resultX: ${result?.resultX},
+                        resultY: ${result?.resultY},
+                        resultZ: ${result?.resultZ}
+                    """.trimIndent()
+
+                    binding.resultText.text = resultStr
+
                     Handler(Looper.getMainLooper()).post {
-                        Toast.makeText(applicationContext, result?.result, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(applicationContext, resultStr, Toast.LENGTH_LONG).show()
                     }
                 } else {
                     Handler(Looper.getMainLooper()).post {

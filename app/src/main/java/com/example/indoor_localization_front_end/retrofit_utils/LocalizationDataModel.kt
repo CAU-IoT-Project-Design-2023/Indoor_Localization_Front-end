@@ -5,7 +5,8 @@ import com.google.gson.annotations.SerializedName
 
 // 서버에서 받아올 JSON 형식의 데이터에 해당하는 class
 data class LocalizationDataModel(
-    @SerializedName("result")
-    @Expose
-    val result: String
+    @SerializedName("result") @Expose val result: String,
+    @SerializedName("resultX") @Expose val resultX: Double,
+    @SerializedName("resultY") @Expose val resultY: Double,
+    @SerializedName("resultZ") @Expose val resultZ: Double
 )
