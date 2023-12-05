@@ -53,7 +53,11 @@ class LocalizationActivity : AppCompatActivity() {
                         gyroData[2] += z
                     }
                     Sensor.TYPE_LINEAR_ACCELERATION -> {
-                        binding.textView1.text = buildString {
+                        if (gyroData[0] == 0.0 && gyroData[1] == 0.0 && gyroData[2] == 0.0) {
+                            return
+                        }
+
+                        binding.accelTextView.text = buildString {
                             append("x: ${x}\n")
                             append("y: ${y}\n")
                             append("z: ${z}\n")
@@ -62,7 +66,7 @@ class LocalizationActivity : AppCompatActivity() {
                         accelDataList[1].add(y)
                         accelDataList[2].add(z)
 
-                        binding.textView2.text = buildString {
+                        binding.gyroTextView.text = buildString {
                             append("x: ${gyroData[0]}\n")
                             append("y: ${gyroData[1]}\n")
                             append("z: ${gyroData[2]}\n")
@@ -110,9 +114,13 @@ class LocalizationActivity : AppCompatActivity() {
         // request permissions
         requestPermissions(permissions, REQUEST_PERMISSIONS)
 
-        binding.button.setOnClickListener {
+        binding.sensorButton.setOnClickListener {
             // 센서의 변화 값을 처리할 리스너를 등록.
             if (!isWorking) {
+                binding.localizationButton.isEnabled = false
+                binding.sensorButton.text = "Stop tracking"
+                binding.resultText.text = "result: ?"
+
                 for (i in accelDataList.indices) {
                     accelDataList[i].clear()
                     gyroDataList[i].clear()
@@ -133,13 +141,22 @@ class LocalizationActivity : AppCompatActivity() {
                 }
             } else {
                 sensorManager.unregisterListener(eventListener)
+                binding.sensorButton.text = "Start tracking"
                 if (saveExcel()) {
                     runBlocking {
-                        doIndoorLocalization()
+                        saveSensorData()
                     }
                 }
             }
             isWorking = !isWorking
+        }
+
+        binding.localizationButton.setOnClickListener {
+            runBlocking {
+                doLocalization()
+                binding.sensorButton.isEnabled = true
+                binding.localizationButton.isEnabled = false
+            }
         }
     }
 
@@ -210,7 +227,7 @@ class LocalizationActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun doIndoorLocalization() {
+    private suspend fun saveSensorData() {
         val file = File(
             Environment.getExternalStorageDirectory().absolutePath +
                     "/Indoor Positioning System/sensor_data.xls"
@@ -230,20 +247,12 @@ class LocalizationActivity : AppCompatActivity() {
 
         withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
             try {
-                val response = retrofitService.doIndoorLocalization(body)
+                val response = retrofitService.sendSensorData(body)
                 if (response.isSuccessful) {
-                    val result = response.body()
-                    val resultStr = """
-                        result: ${result?.result},
-                        resultX: ${result?.resultX},
-                        resultY: ${result?.resultY},
-                        resultZ: ${result?.resultZ}
-                    """.trimIndent()
-
-                    binding.resultText.text = resultStr
-
                     Handler(Looper.getMainLooper()).post {
-                        Toast.makeText(applicationContext, resultStr, Toast.LENGTH_LONG).show()
+                        binding.sensorButton.isEnabled = false
+                        binding.localizationButton.isEnabled = true
+                        Toast.makeText(applicationContext, "The file is saved Successfully.", Toast.LENGTH_LONG).show()
                     }
                 } else {
                     Handler(Looper.getMainLooper()).post {
@@ -254,6 +263,37 @@ class LocalizationActivity : AppCompatActivity() {
                 e.printStackTrace()
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(applicationContext, "Connection Error", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private suspend fun doLocalization() {
+        withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
+            try {
+                val response = retrofitService.doIndoorLocalization()
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    val resultStr = """
+                        result: ${result?.result},
+                        resultX: ${result?.resultX},
+                        resultY: ${result?.resultY},
+                        resultZ: ${result?.resultZ}
+                    """.trimIndent()
+
+                    Handler(Looper.getMainLooper()).post {
+                        binding.resultText.text = resultStr
+                        Toast.makeText(applicationContext, resultStr, Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(applicationContext, "Response Error", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(applicationContext, "Localization Error", Toast.LENGTH_SHORT).show()
                 }
             }
         }

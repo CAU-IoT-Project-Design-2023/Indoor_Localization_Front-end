@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         pref = getSharedPreferences("ip_address", Activity.MODE_PRIVATE)
         editor = pref.edit()
 
-        binding.button.setOnClickListener {
+        binding.startButton.setOnClickListener {
             // Use the Builder class for convenient dialog construction
             val builder = AlertDialog.Builder(this)
 
@@ -45,12 +45,9 @@ class MainActivity : AppCompatActivity() {
                             override fun onResponse(call: Call<String>, response: Response<String>) {
                                 if (response.isSuccessful) {
                                     editor.putString("url", url).apply()
-                                    val result = response.body()
-                                    if (result == "connected") {
-                                        val intent = Intent(this@MainActivity, LocalizationActivity::class.java)
-                                        intent.putExtra("url", url)
-                                        startActivity(intent)
-                                    }
+                                    val intent = Intent(this@MainActivity, LocalizationActivity::class.java)
+                                    intent.putExtra("url", url)
+                                    startActivity(intent)
                                 } else {
                                     Toast.makeText(applicationContext, "Response Error", Toast.LENGTH_SHORT).show()
                                 }
@@ -72,7 +69,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // TODO: 삭제 필요?
-        binding.button2.setOnClickListener {
+        binding.startButton2.setOnClickListener {
             startActivity(Intent(this, LocalizationActivity::class.java))
         }
     }

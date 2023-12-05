@@ -14,14 +14,10 @@ interface RetrofitInterface {
     @GET("is-connected")
     fun isConnected(): Call<String>
 
-    @GET("get-sensor-data")
-    fun sendSensorData(
-        @Query("x") x: Double,
-        @Query("y") y: Double,
-        @Query("z") z: Double
-    ): Call<String>
-
     @Multipart
-    @POST("indoor-localization")
-    suspend fun doIndoorLocalization(@Part sensorData: MultipartBody.Part): Response<LocalizationDataModel>
+    @POST("save-sensor-data")
+    suspend fun sendSensorData(@Part sensorData: MultipartBody.Part): Response<String>
+
+    @GET("indoor-localization")
+    suspend fun doIndoorLocalization(): Response<LocalizationDataModel>
 }
