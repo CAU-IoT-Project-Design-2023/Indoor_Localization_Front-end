@@ -2,17 +2,22 @@ package com.example.indoor_localization_front_end
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.indoor_localization_front_end.databinding.ActivityLocalizationBinding
 import com.example.indoor_localization_front_end.retrofit_utils.RetrofitClient
 import com.example.indoor_localization_front_end.retrofit_utils.RetrofitInterface
@@ -73,8 +78,21 @@ class LocalizationActivity : AppCompatActivity() {
                         }
                         for (i in gyroData.indices) {
                             gyroDataList[i].add(gyroData[i])
+                            uncalAccelDataList[i].add(uncalData[i])
                             gyroData[i] = 0.0
+                            uncalData[i] = 0.0
                         }
+                    }
+                    Sensor.TYPE_STEP_COUNTER ->{
+
+                    }
+                    Sensor.TYPE_ACCELEROMETER_UNCALIBRATED ->{
+                        var uncal_x = event.values[3].toDouble()
+                        var uncal_y =  event.values[4].toDouble()
+                        var uncal_z = event.values[5].toDouble()
+                        uncalData[0] += uncal_x
+                        uncalData[1] += uncal_y
+                        uncalData[2] += uncal_z
                     }
                     else -> {}
                 }
@@ -85,13 +103,19 @@ class LocalizationActivity : AppCompatActivity() {
     }
 
     private val accelDataList = Array<MutableList<Double>>(3) { mutableListOf() }
+    private val uncalAccelDataList = Array<MutableList<Double>>(3) { mutableListOf() }
     private val gyroDataList = Array<MutableList<Double>>(3) { mutableListOf() }
     private val gyroData = doubleArrayOf(0.0, 0.0, 0.0)
+    private val uncalData = doubleArrayOf(0.0, 0.0, 0.0)
+    private val step = 0;
 
     // permissions
     private var permissionAccepted = false
     private var permissions: Array<String> = arrayOf(
-        Manifest.permission.WRITE_EXTERNAL_STORAGE
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO,
+        Manifest.permission.ACTIVITY_RECOGNITION,
+        Manifest.permission.POST_NOTIFICATIONS
     )
 
     companion object {
@@ -114,6 +138,14 @@ class LocalizationActivity : AppCompatActivity() {
         // request permissions
         requestPermissions(permissions, REQUEST_PERMISSIONS)
 
+        if(!Environment.isExternalStorageManager()){
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            intent.addCategory("android.intent.category.DEFAULT");
+            intent.setData((Uri.parse("package:"+applicationContext.packageName)));
+            startActivityForResult(intent,123);
+        }
+
+
         binding.sensorButton.setOnClickListener {
             // 센서의 변화 값을 처리할 리스너를 등록.
             if (!isWorking) {
@@ -124,12 +156,14 @@ class LocalizationActivity : AppCompatActivity() {
                 for (i in accelDataList.indices) {
                     accelDataList[i].clear()
                     gyroDataList[i].clear()
+                    uncalAccelDataList[i].clear()
                     gyroData[i] = 0.0
                 }
 
                 val sensors = arrayOf(
                     Sensor.TYPE_GYROSCOPE,
-                    Sensor.TYPE_LINEAR_ACCELERATION
+                    Sensor.TYPE_LINEAR_ACCELERATION,
+                    Sensor.TYPE_ACCELEROMETER_UNCALIBRATED
                 )
 
                 for (sensor in sensors) {
@@ -184,7 +218,7 @@ class LocalizationActivity : AppCompatActivity() {
             row.createCell(2).setCellValue("Y (m/s^2)")
             row.createCell(3).setCellValue("Z (m/s^2)")
 
-            for (i in accelDataList[0].indices) {
+                for (i in accelDataList[0].indices) {
                 row = this.createRow(i + 1)
                 row.createCell(0).setCellValue(0.0)
                 for (j in accelDataList.indices) {
@@ -208,6 +242,21 @@ class LocalizationActivity : AppCompatActivity() {
                 }
             }
         }
+        with(workbook.createSheet("uncal_Accelo")) {
+            var row = this.createRow(0)
+            row.createCell(0).setCellValue("Time (s)")
+            row.createCell(1).setCellValue("X (rad/s)")
+            row.createCell(2).setCellValue("Y (rad/s)")
+            row.createCell(3).setCellValue("Z (rad/s)")
+
+            for (i in uncalAccelDataList[0].indices) {
+                row = this.createRow(i + 1)
+                row.createCell(0).setCellValue(0.0)
+                for (j in uncalAccelDataList.indices) {
+                    row.createCell(j + 1).setCellValue(uncalAccelDataList[j][i])
+                }
+            }
+        }
 
         val sdCard = Environment.getExternalStorageDirectory()
         val dir = sdCard.absolutePath + "/Indoor Positioning System"
@@ -228,6 +277,8 @@ class LocalizationActivity : AppCompatActivity() {
     }
 
     private suspend fun saveSensorData() {
+        val path = Environment.getExternalStorageDirectory().absolutePath +
+                "/Indoor Positioning System/sensor_data.xls";
         val file = File(
             Environment.getExternalStorageDirectory().absolutePath +
                     "/Indoor Positioning System/sensor_data.xls"

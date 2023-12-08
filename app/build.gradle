@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace 'com.example.indoor_localization_front_end'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.example.indoor_localization_front_end"
@@ -33,6 +33,7 @@ android {
     buildFeatures {
         viewBinding true
     }
+    buildToolsVersion '34.0.0'
 }
 
 dependencies {

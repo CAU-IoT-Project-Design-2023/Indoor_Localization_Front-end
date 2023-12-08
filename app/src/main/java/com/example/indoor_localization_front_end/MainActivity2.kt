@@ -14,7 +14,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MainActivity : AppCompatActivity() {
+class MainActivity2 : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var pref: SharedPreferences
     private lateinit var editor: SharedPreferences.Editor
@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
                             override fun onResponse(call: Call<String>, response: Response<String>) {
                                 if (response.isSuccessful) {
                                     editor.putString("url", url).apply()
-                                    val intent = Intent(this@MainActivity, LocalizationActivity::class.java)
+                                    val intent = Intent(this@MainActivity2, LocalizationActivity::class.java)
                                     intent.putExtra("url", url)
                                     startActivity(intent)
                                 } else {
