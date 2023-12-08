@@ -1,17 +1,16 @@
 package com.example.indoor_localization_front_end
 
 import android.Manifest
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.net.wifi.WifiManager
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
-import android.text.method.ScrollingMovementMethod
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.example.indoor_localization_front_end.databinding.ActivityWifiBinding
@@ -23,25 +22,25 @@ class WifiActivity : AppCompatActivity() {
         getSystemService(Context.WIFI_SERVICE) as WifiManager
     }
 
-    /*
-    private val wifiReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-
-        }
-    }
-    */
-
     // permissions
     private var permissionAccepted = false
-    private var permissions: Array<String> = arrayOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.POST_NOTIFICATIONS,
-        Manifest.permission.READ_MEDIA_IMAGES,
-        Manifest.permission.READ_MEDIA_VIDEO,
-        Manifest.permission.CHANGE_WIFI_STATE
-
-    )
+    private var permissions: Array<String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.READ_MEDIA_IMAGES,
+            Manifest.permission.READ_MEDIA_VIDEO,
+            Manifest.permission.ACTIVITY_RECOGNITION,
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.CHANGE_WIFI_STATE
+        )
+    } else {
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+    }
 
     companion object {
         private const val REQUEST_PERMISSIONS = 200
@@ -55,15 +54,14 @@ class WifiActivity : AppCompatActivity() {
         // request permissions
         requestPermissions(permissions, REQUEST_PERMISSIONS)
 
-
-        if(!Environment.isExternalStorageManager()){
-            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-            intent.addCategory("android.intent.category.DEFAULT");
-            intent.setData((Uri.parse("package:"+applicationContext.packageName)));
-            startActivityForResult(intent,123);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if(!Environment.isExternalStorageManager()){
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.addCategory("android.intent.category.DEFAULT")
+                intent.setData((Uri.parse("package:"+applicationContext.packageName)))
+                startActivityForResult(intent,123)
+            }
         }
-
-        //registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
 
         binding.scanButton.setOnClickListener {
             if (wifiManager.startScan()) {
@@ -86,6 +84,13 @@ class WifiActivity : AppCompatActivity() {
 
                 results?.let {
                     binding.resultTextView.text = buildString {
+                        val info = wifiManager.connectionInfo
+                        append("Current Network ==> ")
+                        append("SSID: ")
+                        append(info.ssid)
+                        append(", RSSI: ")
+                        append("${info.rssi}\n\n")
+
                         it.forEach {
                             append(it.SSID)
                             append(": ")
@@ -99,13 +104,6 @@ class WifiActivity : AppCompatActivity() {
             }
         }
     }
-
-    /*
-    override fun onStop() {
-        super.onStop()
-        //unregisterReceiver(wifiReceiver)
-    }
-    */
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

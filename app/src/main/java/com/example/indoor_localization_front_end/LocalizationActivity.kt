@@ -9,6 +9,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
@@ -16,6 +17,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.indoor_localization_front_end.databinding.ActivityLocalizationBinding
@@ -122,6 +124,7 @@ class LocalizationActivity : AppCompatActivity() {
         private const val REQUEST_PERMISSIONS = 200
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLocalizationBinding.inflate(layoutInflater)
@@ -138,7 +141,12 @@ class LocalizationActivity : AppCompatActivity() {
         // request permissions
         requestPermissions(permissions, REQUEST_PERMISSIONS)
 
-        if(!Environment.isExternalStorageManager()){
+        if(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                !Environment.isExternalStorageManager()
+            } else {
+                TODO("VERSION.SDK_INT < R")
+            }
+        ){
             val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
             intent.addCategory("android.intent.category.DEFAULT");
             intent.setData((Uri.parse("package:"+applicationContext.packageName)));
