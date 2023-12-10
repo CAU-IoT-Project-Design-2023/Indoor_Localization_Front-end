@@ -68,12 +68,7 @@ class MainActivity : AppCompatActivity() {
             builder.create().show()
         }
 
-        // TODO: 삭제 필요?
-        binding.startButton2.setOnClickListener {
-            startActivity(Intent(this, LocalizationActivity::class.java))
-        }
-
-        binding.startButton3.setOnClickListener {
+        binding.testButton.setOnClickListener {
             startActivity(Intent(this, WifiActivity::class.java))
         }
     }

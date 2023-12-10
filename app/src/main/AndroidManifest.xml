@@ -36,9 +36,6 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".LocalizationActivity"
-            android:exported="false" />
-        <activity
             android:name=".WifiActivity"
             android:exported="false" />
         <activity
