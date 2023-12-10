@@ -17,7 +17,9 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.example.indoor_localization_front_end.databinding.ActivityLocalizationBinding
 import com.example.indoor_localization_front_end.databinding.ActivityWifiBinding
+import com.example.indoor_localization_front_end.retrofit_utils.RetrofitClient
 import com.example.indoor_localization_front_end.retrofit_utils.RetrofitInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -135,8 +137,19 @@ class WifiActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityWifiBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val url = intent.getStringExtra("url")
+        retrofitService = if (url == null) {
+            RetrofitClient.getApiService()
+        } else {
+            Toast.makeText(applicationContext, "url", Toast.LENGTH_SHORT).show()
+            RetrofitClient.getApiService2(url)
+        }
+
+
 
         // request permissions
         requestPermissions(permissions, REQUEST_PERMISSIONS)
