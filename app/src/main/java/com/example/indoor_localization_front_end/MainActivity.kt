@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
                             override fun onResponse(call: Call<String>, response: Response<String>) {
                                 if (response.isSuccessful) {
                                     editor.putString("url", url).apply()
-                                    val intent = Intent(this@MainActivity, LocalizationActivity::class.java)
+                                    val intent = Intent(this@MainActivity, WifiActivity::class.java)
                                     intent.putExtra("url", url)
                                     startActivity(intent)
                                 } else {

@@ -134,7 +134,7 @@ class LocalizationActivity : AppCompatActivity() {
         retrofitService = if (url == null) {
             RetrofitClient.getApiService()
         } else {
-            Toast.makeText(applicationContext, "url", Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "$url", Toast.LENGTH_SHORT).show()
             RetrofitClient.getApiService2(url)
         }
 

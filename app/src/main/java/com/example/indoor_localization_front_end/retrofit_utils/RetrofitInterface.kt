@@ -20,4 +20,7 @@ interface RetrofitInterface {
 
     @GET("indoor-localization")
     suspend fun doIndoorLocalization(): Response<LocalizationDataModel>
+
+    @POST("save-rssi-section-data")
+    fun saveRssiAndSectionData(@Body rssiData: RssiData): Call<String>
 }
