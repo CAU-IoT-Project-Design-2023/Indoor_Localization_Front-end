@@ -1,6 +1,7 @@
 package com.example.indoor_localization_front_end
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -19,9 +20,12 @@ import com.example.indoor_localization_front_end.databinding.ActivityWifiBinding
 import com.example.indoor_localization_front_end.retrofit_utils.RetrofitClient
 import com.example.indoor_localization_front_end.retrofit_utils.RetrofitInterface
 import com.example.indoor_localization_front_end.retrofit_utils.RssiData
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
+import java.io.FileOutputStream
 
 class WifiActivity : AppCompatActivity() {
     private lateinit var binding: ActivityWifiBinding
@@ -31,7 +35,53 @@ class WifiActivity : AppCompatActivity() {
         getSystemService(Context.WIFI_SERVICE) as WifiManager
     }
 
-    private val data = mutableMapOf<String, Int>()
+    private val wifiReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == WifiManager.SCAN_RESULTS_AVAILABLE_ACTION) {
+                if (wifiManager.startScan()) {
+                    val results = if (ActivityCompat.checkSelfPermission(
+                            applicationContext,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        null
+                    } else {
+                        wifiManager.scanResults
+                    }
+
+                    results?.let {
+                        binding.resultTextView.text = buildString {
+                            val info = wifiManager.connectionInfo
+                            append("Current Network ==> ")
+                            append("SSID: ${info.ssid}\n")
+                            append("BSSID: ${info.bssid}\n")
+                            append("RSSI: ${info.rssi}\n\n")
+
+                            it.forEach {
+                                append("SSID: ${it.SSID}\n")
+                                append("BSSID: ${it.BSSID}\n")
+                                append("RSSI: ${it.level}\n\n")
+
+                                if (it.SSID in arrayOf("IoTHotspot1", "IoTHotspot2", "IoTHotspot3")) {
+                                    apData[it.SSID] = it.level
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private val apData = mutableMapOf<String, Int>()
+    private val apRSSIRecord = mutableMapOf<String, MutableList<Int>>()
 
     // permissions
     private var permissionAccepted = false
@@ -82,6 +132,8 @@ class WifiActivity : AppCompatActivity() {
             }
         }
 
+        // TODO: registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
+
         binding.scanButton.setOnClickListener {
             if (wifiManager.startScan()) {
                 val results = if (ActivityCompat.checkSelfPermission(
@@ -105,21 +157,17 @@ class WifiActivity : AppCompatActivity() {
                     binding.resultTextView.text = buildString {
                         val info = wifiManager.connectionInfo
                         append("Current Network ==> ")
-                        append("SSID: ")
-                        append(info.ssid)
-                        append(", RSSI: ")
-                        append("${info.rssi}")
-                        append("\n\n")
+                        append("SSID: ${info.ssid}\n")
+                        append("BSSID: ${info.bssid}\n")
+                        append("RSSI: ${info.rssi}\n\n")
 
                         it.forEach {
-                            append(it.SSID)
-                            append(": ")
-                            append(it.level)
-                            append(", ")
-                            append("\n")
+                            append("SSID: ${it.SSID}\n")
+                            append("BSSID: ${it.BSSID}\n")
+                            append("RSSI: ${it.level}\n\n")
 
                             if (it.SSID in arrayOf("IoTHotspot1", "IoTHotspot2", "IoTHotspot3")) {
-                                data[it.SSID] = it.level
+                                apData[it.SSID] = it.level
                             }
                         }
                     }
@@ -145,9 +193,9 @@ class WifiActivity : AppCompatActivity() {
                     try {
                         val section = dialogView.findViewById<EditText>(R.id.sectionEditText).text.toString().toInt()
 
-                        val r1 = data["IoTHotspot1"] ?: 0
-                        val r2 = data["IotHotspot2"] ?: 0
-                        val r3 = data["IoTHotspot3"] ?: 0
+                        val r1 = apData["IoTHotspot1"] ?: 0
+                        val r2 = apData["IotHotspot2"] ?: 0
+                        val r3 = apData["IoTHotspot3"] ?: 0
 
                         if (r1 == 0 || r2 == 0 || r3 == 0) {
                             Toast.makeText(applicationContext, "Some rssi values are missing.", Toast.LENGTH_SHORT).show()
@@ -185,6 +233,83 @@ class WifiActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        // TODO: unregisterReceiver(wifiReceiver)
+    }
+
+    private fun saveExcel(): Boolean {
+        if (!isExternalStorageWritable()) {
+            return false
+        }
+
+        val workbook = HSSFWorkbook()
+
+        with(workbook.createSheet("Linear Accelerometer")) {
+            var row = this.createRow(0)
+            row.createCell(0).setCellValue("Time (s)")
+            row.createCell(1).setCellValue("X (m/s^2)")
+            row.createCell(2).setCellValue("Y (m/s^2)")
+            row.createCell(3).setCellValue("Z (m/s^2)")
+
+            for (i in accelDataList[0].indices) {
+                row = this.createRow(i + 1)
+                row.createCell(0).setCellValue(0.0)
+                for (j in accelDataList.indices) {
+                    row.createCell(j + 1).setCellValue(accelDataList[j][i])
+                }
+            }
+        }
+
+        with(workbook.createSheet("Gyroscope")) {
+            var row = this.createRow(0)
+            row.createCell(0).setCellValue("Time (s)")
+            row.createCell(1).setCellValue("X (rad/s)")
+            row.createCell(2).setCellValue("Y (rad/s)")
+            row.createCell(3).setCellValue("Z (rad/s)")
+
+            for (i in gyroDataList[0].indices) {
+                row = this.createRow(i + 1)
+                row.createCell(0).setCellValue(0.0)
+                for (j in gyroDataList.indices) {
+                    row.createCell(j + 1).setCellValue(gyroDataList[j][i])
+                }
+            }
+        }
+        with(workbook.createSheet("uncal_Accelo")) {
+            var row = this.createRow(0)
+            row.createCell(0).setCellValue("Time (s)")
+            row.createCell(1).setCellValue("X (rad/s)")
+            row.createCell(2).setCellValue("Y (rad/s)")
+            row.createCell(3).setCellValue("Z (rad/s)")
+
+            for (i in uncalAccelDataList[0].indices) {
+                row = this.createRow(i + 1)
+                row.createCell(0).setCellValue(0.0)
+                for (j in uncalAccelDataList.indices) {
+                    row.createCell(j + 1).setCellValue(uncalAccelDataList[j][i])
+                }
+            }
+        }
+
+        val sdCard = Environment.getExternalStorageDirectory()
+        val dir = sdCard.absolutePath + "/Indoor Positioning System"
+        if (!File(dir).exists()) {
+            File(dir).mkdirs()
+        }
+        val excelFile = File(dir, "sensor_data.xls")
+
+        return try {
+            workbook.write(FileOutputStream(excelFile))
+            workbook.close()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(applicationContext, "Failed to save the data.", Toast.LENGTH_SHORT).show()
+            false
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -202,4 +327,7 @@ class WifiActivity : AppCompatActivity() {
             finish()
         }
     }
+
+    private fun isExternalStorageWritable()
+            = Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED
 }
