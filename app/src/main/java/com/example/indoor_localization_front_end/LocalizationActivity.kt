@@ -90,9 +90,9 @@ class LocalizationActivity : AppCompatActivity() {
                         var uncal_x = event.values[3].toDouble()
                         var uncal_y =  event.values[4].toDouble()
                         var uncal_z = event.values[5].toDouble()
-                        uncalData[0] += uncal_x
-                        uncalData[1] += uncal_y
-                        uncalData[2] += uncal_z
+                        uncalData[0] += x
+                        uncalData[1] += y
+                        uncalData[2] += z
                     }
                     else -> {}
                 }
