@@ -145,6 +145,7 @@ class WifiActivity : AppCompatActivity() {
                     binding.sendButton.isEnabled = false
                     binding.localizationButton.isEnabled = false
 
+                    doScan()
                     registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
                 }
                 .setNegativeButton("Cancel") { _, _ -> }
