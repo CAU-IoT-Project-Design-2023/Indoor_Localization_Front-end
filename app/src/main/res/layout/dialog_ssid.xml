@@ -11,34 +11,36 @@
         android:contentDescription="@string/app_name"
         android:gravity="center|center_vertical"
         android:scaleType="center"
-        android:text="Enter three BSSID"
+        android:text="Enter three SSID"
         android:textColor="@color/white" />
 
     <EditText
-        android:id="@+id/bssidEditText1"
+        android:id="@+id/ssidEditText1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="4dp"
         android:layout_marginTop="16dp"
         android:layout_marginRight="4dp"
         android:layout_marginBottom="4dp"
-        android:hint="01:02:a0:0a:20:10" />
+        android:hint="IoTHotspot1" />
+
     <EditText
-        android:id="@+id/bssidEditText2"
+        android:id="@+id/ssidEditText2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="4dp"
         android:layout_marginTop="16dp"
         android:layout_marginRight="4dp"
         android:layout_marginBottom="4dp"
-        android:hint="01:02:a0:0a:20:10" />
+        android:hint="IoTHotspot2" />
+
     <EditText
-        android:id="@+id/bssidEditText3"
+        android:id="@+id/ssidEditText3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="4dp"
         android:layout_marginTop="16dp"
         android:layout_marginRight="4dp"
         android:layout_marginBottom="4dp"
-        android:hint="01:02:a0:0a:20:10" />
+        android:hint="IoTHotspot3" />
 </LinearLayout>

@@ -17,7 +17,6 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.util.Log
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -48,24 +47,22 @@ class WifiActivity : AppCompatActivity() {
 
     private val wifiReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == WifiManager.SCAN_RESULTS_AVAILABLE_ACTION) {
-                doScan()
+            doScan()
 
-                if (rssiRecord[bssidList[0]]!!.size >= 100
-                    && rssiRecord[bssidList[1]]!!.size >= 100
-                    && rssiRecord[bssidList[2]]!!.size >= 100
-                ) {
-                    unregisterReceiver(this)
-                    Toast.makeText(applicationContext, "Scanning is finished.", Toast.LENGTH_SHORT).show()
-                    binding.scanButton.isEnabled = false
-                    binding.sendButton.isEnabled = true
-                    binding.localizationButton.isEnabled = false
-                }
+            if (rssiRecord[ssidList[0]]!!.size >= 25
+                && rssiRecord[ssidList[1]]!!.size >= 25
+                && rssiRecord[ssidList[2]]!!.size >= 25
+            ) {
+                unregisterReceiver(this)
+                Toast.makeText(applicationContext, "Scanning is finished.", Toast.LENGTH_SHORT).show()
+                binding.scanButton.isEnabled = false
+                binding.sendButton.isEnabled = true
+                binding.localizationButton.isEnabled = false
             }
         }
     }
 
-    private val bssidList = mutableListOf<String>()
+    private val ssidList = mutableListOf<String>()
     private val rssiRecord = mutableMapOf<String, MutableList<Int>>()
 
     // permissions
@@ -97,7 +94,7 @@ class WifiActivity : AppCompatActivity() {
         binding = ActivityWifiBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        pref = getSharedPreferences("bssid", Activity.MODE_PRIVATE)
+        pref = getSharedPreferences("ssid", Activity.MODE_PRIVATE)
         editor = pref.edit()
 
         val url = intent.getStringExtra("url")
@@ -122,35 +119,33 @@ class WifiActivity : AppCompatActivity() {
 
         binding.scanButton.setOnClickListener {
             val builder = AlertDialog.Builder(this)
-            val dialogView = layoutInflater.inflate(R.layout.dialog_bssid, null)
-            dialogView.findViewById<EditText>(R.id.bssidEditText1).setText(pref.getString("bssid1", ""))
-            dialogView.findViewById<EditText>(R.id.bssidEditText2).setText(pref.getString("bssid2", ""))
-            dialogView.findViewById<EditText>(R.id.bssidEditText3).setText(pref.getString("bssid3", ""))
+            val dialogView = layoutInflater.inflate(R.layout.dialog_ssid, null)
+            dialogView.findViewById<EditText>(R.id.ssidEditText1).setText(pref.getString("ssid1", ""))
+            dialogView.findViewById<EditText>(R.id.ssidEditText2).setText(pref.getString("ssid2", ""))
+            dialogView.findViewById<EditText>(R.id.ssidEditText3).setText(pref.getString("ssid3", ""))
 
             builder.setView(dialogView)
                 .setPositiveButton("OK") { _, _ ->
-                    val bssid1 = dialogView.findViewById<EditText>(R.id.bssidEditText1).text.toString()
-                    val bssid2 = dialogView.findViewById<EditText>(R.id.bssidEditText2).text.toString()
-                    val bssid3 = dialogView.findViewById<EditText>(R.id.bssidEditText3).text.toString()
-                    editor.putString("bssid1", bssid1).apply()
-                    editor.putString("bssid2", bssid2).apply()
-                    editor.putString("bssid3", bssid3).apply()
-                    bssidList.clear()
-                    bssidList.add(bssid1)
-                    bssidList.add(bssid2)
-                    bssidList.add(bssid3)
+                    val ssid1 = dialogView.findViewById<EditText>(R.id.ssidEditText1).text.toString()
+                    val ssid2 = dialogView.findViewById<EditText>(R.id.ssidEditText2).text.toString()
+                    val ssid3 = dialogView.findViewById<EditText>(R.id.ssidEditText3).text.toString()
+                    editor.putString("ssid1", ssid1).apply()
+                    editor.putString("ssid2", ssid2).apply()
+                    editor.putString("ssid3", ssid3).apply()
+                    ssidList.clear()
+                    ssidList.add(ssid1)
+                    ssidList.add(ssid2)
+                    ssidList.add(ssid3)
                     rssiRecord.clear()
-                    rssiRecord[bssid1] = mutableListOf()
-                    rssiRecord[bssid2] = mutableListOf()
-                    rssiRecord[bssid3] = mutableListOf()
+                    rssiRecord[ssid1] = mutableListOf()
+                    rssiRecord[ssid2] = mutableListOf()
+                    rssiRecord[ssid3] = mutableListOf()
 
                     binding.scanButton.isEnabled = false
                     binding.sendButton.isEnabled = false
                     binding.localizationButton.isEnabled = false
 
-                    val filter = IntentFilter()
-                    filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
-                    registerReceiver(wifiReceiver, filter)
+                    registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
                 }
                 .setNegativeButton("Cancel") { _, _ -> }
 
@@ -187,32 +182,31 @@ class WifiActivity : AppCompatActivity() {
             // TODO
 
             val builder = AlertDialog.Builder(this)
-            val dialogView = layoutInflater.inflate(R.layout.dialog_bssid, null)
-            dialogView.findViewById<EditText>(R.id.bssidEditText1).setText(pref.getString("bssid1", ""))
-            dialogView.findViewById<EditText>(R.id.bssidEditText2).setText(pref.getString("bssid2", ""))
-            dialogView.findViewById<EditText>(R.id.bssidEditText3).setText(pref.getString("bssid3", ""))
+            val dialogView = layoutInflater.inflate(R.layout.dialog_ssid, null)
+            dialogView.findViewById<EditText>(R.id.ssidEditText1).setText(pref.getString("ssid1", ""))
+            dialogView.findViewById<EditText>(R.id.ssidEditText2).setText(pref.getString("ssid2", ""))
+            dialogView.findViewById<EditText>(R.id.ssidEditText3).setText(pref.getString("ssid3", ""))
 
             builder.setView(dialogView)
                 .setPositiveButton("OK") { _, _ ->
-                    val bssid1 = dialogView.findViewById<EditText>(R.id.bssidEditText1).text.toString()
-                    val bssid2 = dialogView.findViewById<EditText>(R.id.bssidEditText2).text.toString()
-                    val bssid3 = dialogView.findViewById<EditText>(R.id.bssidEditText3).text.toString()
-                    editor.putString("bssid1", bssid1).apply()
-                    editor.putString("bssid2", bssid2).apply()
-                    editor.putString("bssid3", bssid3).apply()
-                    bssidList.clear()
-                    bssidList.add(bssid1)
-                    bssidList.add(bssid2)
-                    bssidList.add(bssid3)
-
-                    bssidList.clear()
-                    bssidList.add(bssid1)
-                    bssidList.add(bssid2)
-                    bssidList.add(bssid3)
+                    val ssid1 = dialogView.findViewById<EditText>(R.id.ssidEditText1).text.toString()
+                    val ssid2 = dialogView.findViewById<EditText>(R.id.ssidEditText2).text.toString()
+                    val ssid3 = dialogView.findViewById<EditText>(R.id.ssidEditText3).text.toString()
+                    editor.putString("ssid1", ssid1).apply()
+                    editor.putString("ssid2", ssid2).apply()
+                    editor.putString("ssid3", ssid3).apply()
+                    ssidList.clear()
+                    ssidList.add(ssid1)
+                    ssidList.add(ssid2)
+                    ssidList.add(ssid3)
+                    ssidList.clear()
+                    ssidList.add(ssid1)
+                    ssidList.add(ssid2)
+                    ssidList.add(ssid3)
                     rssiRecord.clear()
-                    rssiRecord[bssid1] = mutableListOf()
-                    rssiRecord[bssid2] = mutableListOf()
-                    rssiRecord[bssid3] = mutableListOf()
+                    rssiRecord[ssid1] = mutableListOf()
+                    rssiRecord[ssid2] = mutableListOf()
+                    rssiRecord[ssid3] = mutableListOf()
                     doScan()
                 }
                 .setNegativeButton("Cancel") { _, _ -> }
@@ -244,19 +238,17 @@ class WifiActivity : AppCompatActivity() {
 
             results?.let {
                 binding.resultTextView.text = buildString {
-                    val info = wifiManager.connectionInfo
-                    append("Current Network\n")
-                    append("SSID: ${info.ssid}\n")
-                    append("BSSID: ${info.bssid}\n")
-                    append("RSSI: ${info.rssi}\n\n")
+                    for (ssid in ssidList) {
+                        append("SSID: $ssid\n")
 
-                    it.forEach {
-                        append("SSID: ${it.SSID}\n")
-                        append("BSSID: ${it.BSSID}\n")
-                        append("RSSI: ${it.level}\n\n")
-
-                        if (it.BSSID in bssidList) {
-                            rssiRecord[it.BSSID]?.add(it.level)
+                        val rssi = it.find { it.SSID == ssid }?.level
+                        if (rssi != null) {
+                            append("RSSI: $rssi\n\n")
+                            if ((rssiRecord[ssid]?.size ?: 0) < 25) {
+                                rssiRecord[ssid]?.add(rssi)
+                            }
+                        } else {
+                            append("RSSI: ?\n\n")
                         }
                     }
                 }
@@ -280,11 +272,11 @@ class WifiActivity : AppCompatActivity() {
             row.createCell(2).setCellValue("Y")
             row.createCell(3).setCellValue("Z")
 
-            for (i in 0..99) {
+            for (i in 0..24) {
                 row = this.createRow(i + 1)
                 row.createCell(0).setCellValue(0.0)
-                for (j in bssidList.indices) {
-                    row.createCell(j + 1).setCellValue(rssiRecord[bssidList[j]]!![i].toDouble())
+                for (j in ssidList.indices) {
+                    row.createCell(j + 1).setCellValue(rssiRecord[ssidList[j]]!![i].toDouble())
                 }
             }
         }
