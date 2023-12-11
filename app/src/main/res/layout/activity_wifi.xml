@@ -10,7 +10,7 @@
         android:id="@+id/scanButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scan 100 times"
+        android:text="Scan"
         app:layout_constraintBottom_toTopOf="@+id/scrollView2"
         app:layout_constraintEnd_toStartOf="@+id/sendButton"
         app:layout_constraintHorizontal_bias="0.5"
