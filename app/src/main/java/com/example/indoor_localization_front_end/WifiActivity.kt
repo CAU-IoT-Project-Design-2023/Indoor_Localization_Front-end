@@ -49,21 +49,23 @@ class WifiActivity : AppCompatActivity() {
         override fun onReceive(context: Context, intent: Intent) {
             doScan()
 
-            if (rssiRecord[ssidList[0]]!!.size >= 25
-                && rssiRecord[ssidList[1]]!!.size >= 25
-                && rssiRecord[ssidList[2]]!!.size >= 25
+            if (rssiRecord[ssidList[0]]!!.size >= size
+                && rssiRecord[ssidList[1]]!!.size >= size
+                && rssiRecord[ssidList[2]]!!.size >= size
             ) {
                 unregisterReceiver(this)
                 Toast.makeText(applicationContext, "Scanning is finished.", Toast.LENGTH_SHORT).show()
                 binding.scanButton.isEnabled = false
                 binding.sendButton.isEnabled = true
-                binding.localizationButton.isEnabled = false
+                binding.scanButton2.isEnabled = false
+                binding.localizationButton.isEnabled = true
             }
         }
     }
 
     private val ssidList = mutableListOf<String>()
     private val rssiRecord = mutableMapOf<String, MutableList<Int>>()
+    private var size = 25
 
     // permissions
     private var permissionAccepted = false
@@ -140,9 +142,11 @@ class WifiActivity : AppCompatActivity() {
                     rssiRecord[ssid1] = mutableListOf()
                     rssiRecord[ssid2] = mutableListOf()
                     rssiRecord[ssid3] = mutableListOf()
+                    size = 25
 
                     binding.scanButton.isEnabled = false
                     binding.sendButton.isEnabled = false
+                    binding.scanButton2.isEnabled = false
                     binding.localizationButton.isEnabled = false
 
                     doScan()
@@ -160,7 +164,7 @@ class WifiActivity : AppCompatActivity() {
             builder.setView(dialogView)
                 .setPositiveButton("OK") { _, _ ->
                     try {
-                        val section = dialogView.findViewById<EditText>(R.id.sectionEditText).toString().toInt()
+                        val section = dialogView.findViewById<EditText>(R.id.sectionEditText).text.toString().toInt()
                         if (saveExcel(section)) {
                             runBlocking {
                                 saveSensorData(section)
@@ -172,6 +176,7 @@ class WifiActivity : AppCompatActivity() {
 
                     binding.scanButton.isEnabled = true
                     binding.sendButton.isEnabled = false
+                    binding.scanButton2.isEnabled = true
                     binding.localizationButton.isEnabled = true
                 }
                 .setNegativeButton("Cancel") { _, _ -> }
@@ -179,9 +184,7 @@ class WifiActivity : AppCompatActivity() {
             builder.create().show()
         }
 
-        binding.localizationButton.setOnClickListener {
-            // TODO
-
+        binding.scanButton2.setOnClickListener {
             val builder = AlertDialog.Builder(this)
             val dialogView = layoutInflater.inflate(R.layout.dialog_ssid, null)
             dialogView.findViewById<EditText>(R.id.ssidEditText1).setText(pref.getString("ssid1", ""))
@@ -200,19 +203,32 @@ class WifiActivity : AppCompatActivity() {
                     ssidList.add(ssid1)
                     ssidList.add(ssid2)
                     ssidList.add(ssid3)
-                    ssidList.clear()
-                    ssidList.add(ssid1)
-                    ssidList.add(ssid2)
-                    ssidList.add(ssid3)
                     rssiRecord.clear()
                     rssiRecord[ssid1] = mutableListOf()
                     rssiRecord[ssid2] = mutableListOf()
                     rssiRecord[ssid3] = mutableListOf()
+                    size = 10
+
+                    binding.scanButton.isEnabled = false
+                    binding.sendButton.isEnabled = false
+                    binding.scanButton2.isEnabled = false
+                    binding.localizationButton.isEnabled = false
                     doScan()
+                    registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
                 }
                 .setNegativeButton("Cancel") { _, _ -> }
 
             builder.create().show()
+        }
+
+        binding.localizationButton.setOnClickListener {
+            runBlocking {
+                doLocalization()
+                binding.scanButton.isEnabled = true
+                binding.sendButton.isEnabled = false
+                binding.scanButton2.isEnabled = true
+                binding.localizationButton.isEnabled = false
+            }
         }
     }
 
@@ -245,7 +261,7 @@ class WifiActivity : AppCompatActivity() {
                         val rssi = it.find { it.SSID == ssid }?.level
                         if (rssi != null) {
                             append("RSSI: $rssi\n\n")
-                            if ((rssiRecord[ssid]?.size ?: 0) < 25) {
+                            if ((rssiRecord[ssid]?.size ?: 0) < size) {
                                 rssiRecord[ssid]?.add(rssi)
                             }
                         } else {
@@ -273,7 +289,7 @@ class WifiActivity : AppCompatActivity() {
             row.createCell(2).setCellValue("Y")
             row.createCell(3).setCellValue("Z")
 
-            for (i in 0..24) {
+            for (i in 0 until size) {
                 row = this.createRow(i + 1)
                 row.createCell(0).setCellValue(0.0)
                 for (j in ssidList.indices) {
@@ -324,6 +340,30 @@ class WifiActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     Handler(Looper.getMainLooper()).post {
                         Toast.makeText(applicationContext, "The file is saved Successfully.", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(applicationContext, "Response Error", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(applicationContext, "Connection Error", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private suspend fun doLocalization() {
+        withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
+            try {
+                val response = retrofitService.doLocalization()
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    Handler(Looper.getMainLooper()).post {
+                        binding.resultTextView.text = "Section: $result"
+                        Toast.makeText(applicationContext, "Section: $result", Toast.LENGTH_LONG).show()
                     }
                 } else {
                     Handler(Looper.getMainLooper()).post {

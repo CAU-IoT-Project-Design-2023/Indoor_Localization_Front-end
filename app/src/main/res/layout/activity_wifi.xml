@@ -24,20 +24,33 @@
         android:enabled="false"
         android:text="Send"
         app:layout_constraintBottom_toTopOf="@+id/scrollView2"
-        app:layout_constraintEnd_toStartOf="@+id/localizationButton"
+        app:layout_constraintEnd_toStartOf="@+id/scanButton2"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/scanButton"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/scanButton2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan2"
+        app:layout_constraintBottom_toTopOf="@+id/scrollView2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/localizationButton"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/sendButton"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/localizationButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:enabled="false"
         android:text="Localization"
-        app:layout_constraintBottom_toTopOf="@+id/scrollView2"
+        app:layout_constraintBottom_toTopOf="@id/scrollView2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/sendButton"
+        app:layout_constraintStart_toEndOf="@+id/scanButton2"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ScrollView
@@ -46,8 +59,7 @@
         android:layout_height="673dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/scanButton">
+        app:layout_constraintStart_toStartOf="parent">
 
         <TextView
             android:id="@+id/resultTextView"
