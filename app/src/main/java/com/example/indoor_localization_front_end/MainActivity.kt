@@ -67,9 +67,5 @@ class MainActivity : AppCompatActivity() {
 
             builder.create().show()
         }
-
-        binding.testButton.setOnClickListener {
-            startActivity(Intent(this, WifiActivity::class.java))
-        }
     }
 }

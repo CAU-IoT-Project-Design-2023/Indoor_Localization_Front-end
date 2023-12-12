@@ -49,23 +49,21 @@ class WifiActivity : AppCompatActivity() {
         override fun onReceive(context: Context, intent: Intent) {
             doScan()
 
-            if (rssiRecord[ssidList[0]]!!.size >= size
-                && rssiRecord[ssidList[1]]!!.size >= size
-                && rssiRecord[ssidList[2]]!!.size >= size
+            if (rssiRecord[ssidList[0]]!!.size >= 10
+                && rssiRecord[ssidList[1]]!!.size >= 10
+                && rssiRecord[ssidList[2]]!!.size >= 10
             ) {
                 unregisterReceiver(this)
                 Toast.makeText(applicationContext, "Scanning is finished.", Toast.LENGTH_SHORT).show()
                 binding.scanButton.isEnabled = false
                 binding.sendButton.isEnabled = true
-                binding.scanButton2.isEnabled = false
-                binding.localizationButton.isEnabled = true
+                binding.localizationButton.isEnabled = false
             }
         }
     }
 
     private val ssidList = mutableListOf<String>()
     private val rssiRecord = mutableMapOf<String, MutableList<Int>>()
-    private var size = 25
 
     // permissions
     private var permissionAccepted = false
@@ -142,13 +140,10 @@ class WifiActivity : AppCompatActivity() {
                     rssiRecord[ssid1] = mutableListOf()
                     rssiRecord[ssid2] = mutableListOf()
                     rssiRecord[ssid3] = mutableListOf()
-                    size = 25
 
                     binding.scanButton.isEnabled = false
                     binding.sendButton.isEnabled = false
-                    binding.scanButton2.isEnabled = false
                     binding.localizationButton.isEnabled = false
-
                     doScan()
                     registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
                 }
@@ -158,67 +153,15 @@ class WifiActivity : AppCompatActivity() {
         }
 
         binding.sendButton.setOnClickListener {
-            val builder = AlertDialog.Builder(this)
-            val dialogView = layoutInflater.inflate(R.layout.dialog_section, null)
-
-            builder.setView(dialogView)
-                .setPositiveButton("OK") { _, _ ->
-                    try {
-                        val section = dialogView.findViewById<EditText>(R.id.sectionEditText).text.toString().toInt()
-                        if (saveExcel(section)) {
-                            runBlocking {
-                                saveSensorData(section)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Toast.makeText(application, "Wrong section number", Toast.LENGTH_SHORT).show()
-                    }
-
-                    binding.scanButton.isEnabled = true
-                    binding.sendButton.isEnabled = false
-                    binding.scanButton2.isEnabled = true
-                    binding.localizationButton.isEnabled = true
+            if (saveExcel()) {
+                runBlocking {
+                    saveSensorData()
                 }
-                .setNegativeButton("Cancel") { _, _ -> }
+            }
 
-            builder.create().show()
-        }
-
-        binding.scanButton2.setOnClickListener {
-            val builder = AlertDialog.Builder(this)
-            val dialogView = layoutInflater.inflate(R.layout.dialog_ssid, null)
-            dialogView.findViewById<EditText>(R.id.ssidEditText1).setText(pref.getString("ssid1", ""))
-            dialogView.findViewById<EditText>(R.id.ssidEditText2).setText(pref.getString("ssid2", ""))
-            dialogView.findViewById<EditText>(R.id.ssidEditText3).setText(pref.getString("ssid3", ""))
-
-            builder.setView(dialogView)
-                .setPositiveButton("OK") { _, _ ->
-                    val ssid1 = dialogView.findViewById<EditText>(R.id.ssidEditText1).text.toString()
-                    val ssid2 = dialogView.findViewById<EditText>(R.id.ssidEditText2).text.toString()
-                    val ssid3 = dialogView.findViewById<EditText>(R.id.ssidEditText3).text.toString()
-                    editor.putString("ssid1", ssid1).apply()
-                    editor.putString("ssid2", ssid2).apply()
-                    editor.putString("ssid3", ssid3).apply()
-                    ssidList.clear()
-                    ssidList.add(ssid1)
-                    ssidList.add(ssid2)
-                    ssidList.add(ssid3)
-                    rssiRecord.clear()
-                    rssiRecord[ssid1] = mutableListOf()
-                    rssiRecord[ssid2] = mutableListOf()
-                    rssiRecord[ssid3] = mutableListOf()
-                    size = 10
-
-                    binding.scanButton.isEnabled = false
-                    binding.sendButton.isEnabled = false
-                    binding.scanButton2.isEnabled = false
-                    binding.localizationButton.isEnabled = false
-                    doScan()
-                    registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
-                }
-                .setNegativeButton("Cancel") { _, _ -> }
-
-            builder.create().show()
+            binding.scanButton.isEnabled = true
+            binding.sendButton.isEnabled = false
+            binding.localizationButton.isEnabled = true
         }
 
         binding.localizationButton.setOnClickListener {
@@ -226,7 +169,6 @@ class WifiActivity : AppCompatActivity() {
                 doLocalization()
                 binding.scanButton.isEnabled = true
                 binding.sendButton.isEnabled = false
-                binding.scanButton2.isEnabled = true
                 binding.localizationButton.isEnabled = false
             }
         }
@@ -261,7 +203,7 @@ class WifiActivity : AppCompatActivity() {
                         val rssi = it.find { it.SSID == ssid }?.level
                         if (rssi != null) {
                             append("RSSI: $rssi\n\n")
-                            if ((rssiRecord[ssid]?.size ?: 0) < size) {
+                            if ((rssiRecord[ssid]?.size ?: 0) < 10) {
                                 rssiRecord[ssid]?.add(rssi)
                             }
                         } else {
@@ -275,8 +217,9 @@ class WifiActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveExcel(section: Int): Boolean {
+    private fun saveExcel(): Boolean {
         if (!isExternalStorageWritable()) {
+            Toast.makeText(applicationContext, "Please allow app permissions.", Toast.LENGTH_SHORT).show()
             return false
         }
 
@@ -289,7 +232,7 @@ class WifiActivity : AppCompatActivity() {
             row.createCell(2).setCellValue("Y")
             row.createCell(3).setCellValue("Z")
 
-            for (i in 0 until size) {
+            for (i in 0 until 10) {
                 row = this.createRow(i + 1)
                 row.createCell(0).setCellValue(0.0)
                 for (j in ssidList.indices) {
@@ -303,7 +246,7 @@ class WifiActivity : AppCompatActivity() {
         if (!File(dir).exists()) {
             File(dir).mkdirs()
         }
-        val excelFile = File(dir, "${section}.xls")
+        val excelFile = File(dir, "rssi_data.xls")
 
         return try {
             workbook.write(FileOutputStream(excelFile))
@@ -316,10 +259,10 @@ class WifiActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun saveSensorData(section: Int) {
+    private suspend fun saveSensorData() {
         val file = File(
             Environment.getExternalStorageDirectory().absolutePath +
-                    "/Indoor Positioning System/${section}.xls"
+                    "/Indoor Positioning System/rssi_data.xls"
         )
 
         // 1st parameter: MediaType 으로 보내는 파일의 타입을 정하는 것
@@ -362,7 +305,10 @@ class WifiActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val result = response.body()
                     Handler(Looper.getMainLooper()).post {
-                        binding.resultTextView.text = "Section: $result"
+                        binding.resultTextView.text = buildString {
+                            append("Section: ")
+                            append(result)
+                        }
                         Toast.makeText(applicationContext, "Section: $result", Toast.LENGTH_LONG).show()
                     }
                 } else {
