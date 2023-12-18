@@ -49,9 +49,9 @@ class WifiActivity : AppCompatActivity() {
         override fun onReceive(context: Context, intent: Intent) {
             doScan()
 
-            if (rssiRecord[ssidList[0]]!!.size >= 10
-                && rssiRecord[ssidList[1]]!!.size >= 10
-                && rssiRecord[ssidList[2]]!!.size >= 10
+            if (rssiRecord[ssidList[0]]!!.size >= SIZE
+                && rssiRecord[ssidList[1]]!!.size >= SIZE
+                && rssiRecord[ssidList[2]]!!.size >= SIZE
             ) {
                 unregisterReceiver(this)
                 Toast.makeText(applicationContext, "Scanning is finished.", Toast.LENGTH_SHORT).show()
@@ -87,6 +87,7 @@ class WifiActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_PERMISSIONS = 200
+        private const val SIZE = 10
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -203,7 +204,7 @@ class WifiActivity : AppCompatActivity() {
                         val rssi = it.find { it.SSID == ssid }?.level
                         if (rssi != null) {
                             append("RSSI: $rssi\n\n")
-                            if ((rssiRecord[ssid]?.size ?: 0) < 10) {
+                            if ((rssiRecord[ssid]?.size ?: 0) < SIZE) {
                                 rssiRecord[ssid]?.add(rssi)
                             }
                         } else {
@@ -232,7 +233,7 @@ class WifiActivity : AppCompatActivity() {
             row.createCell(2).setCellValue("Y")
             row.createCell(3).setCellValue("Z")
 
-            for (i in 0 until 10) {
+            for (i in 0 until SIZE) {
                 row = this.createRow(i + 1)
                 row.createCell(0).setCellValue(0.0)
                 for (j in ssidList.indices) {
